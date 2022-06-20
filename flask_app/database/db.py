@@ -1,15 +1,20 @@
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 
-username = 'app'
-password = '123qwe'
-host = '127.0.0.1:5432'
-database_name ='movies_database'
+from utils import settings
+
+db_settings = settings.get_settings()
+
+username = db_settings.USERNAME
+password = db_settings.PASSWORD
+host = db_settings.HOST
+port = db_settings.PORT
+host_port = ':'.join((host, port))
+database_name = db_settings.DATABASE_NAME
 
 db = SQLAlchemy()
 
 
 def init_db(app: Flask):
-    app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://{username}:{password}@{host}/{database_name}'
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://{username}:{password}@{host_port}/{database_name}'
     db.init_app(app)
-

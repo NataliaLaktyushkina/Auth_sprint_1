@@ -1,133 +1,46 @@
-import datetime
-import jwt
-from functools import wraps
+from datetime import timedelta
 
 from flask import Flask
-from flask import jsonify, request, make_response
-from werkzeug.security import generate_password_hash, check_password_hash
+from flask_jwt_extended import JWTManager
 
+from api.v1.personal_account import sign_up, login, logout, refresh, \
+    login_history, change_login, change_password
 from database.db import db
 from database.db import init_db
-from database.dm_models import User
+from database.redis_db import redis_app
+from utils import settings
 
-app = Flask(__name__)
-app.config['SECRET_KEY'] = 'thisismysecretkey'  # change to  env
-INTERVAL = datetime.timedelta(hours=1)
+ACCESS_EXPIRES = timedelta(hours=1)
+REFRESH_EXPIRES = timedelta(days=30)
+
+app = Flask(__name__, template_folder='templates')
+app.config["JWT_SECRET_KEY"] = settings.get_settings().SECRET_KEY
+app.config["JWT_ACCESS_TOKEN_EXPIRES"] = ACCESS_EXPIRES
+app.config["JWT_REFRESH_TOKEN_EXPIRES"] = REFRESH_EXPIRES
 
 
-def token_required(func):
+jwt = JWTManager(app)
+
+app.add_url_rule('/change_login', methods=["POST"], view_func=change_login)
+app.add_url_rule('/change_password', methods=["POST"], view_func=change_password)
+app.add_url_rule('/login', methods=["POST"], view_func=login)
+app.add_url_rule('/login_history', methods=["GET"], view_func=login_history)
+app.add_url_rule('/logout', methods=["DELETE"],view_func=logout)
+app.add_url_rule('/refresh', methods=["GET"], view_func=refresh)
+app.add_url_rule('/sign_up', methods=["POST"], view_func=sign_up)
+
+
+@jwt.token_in_blocklist_loader
+def check_if_token_is_revoked(jwt_header, jwt_payload: dict):
     """
-    decorator for Movie_API
-    :param func:
-    :return: function or error message
+    Callback function to check if a JWT exists in the redis blocklist
     """
-    @wraps(func)
-    def decorated(*args, **kwargs):
-        token = None
-
-        if 'x-access-token' in request.headers:
-            token = request.headers['x-access-token']
-
-        # token = request.args.get('token')  # http://127.0.0.1:5000/route?token=dfalkfdlu8ejlf787
-        if not token:
-            return jsonify({'message': 'Token is missing'}), 401
-
-        # check if token is valid
-        try:
-            data = jwt.decode(token,  app.config['SECRET_KEY'])
-            current_user = User.query.filter_by(login=data['login']).first()
-
-        except:
-            return jsonify({'message': 'Token is invalid'}), 401
-
-        return func(current_user, *args, **kwargs)
-
-    return decorated
+    jti = jwt_payload["jti"]
+    token_in_redis = redis_app.get(jti)
+    return token_in_redis is not None
 
 
-@app.route('/hello-world')
-def hello_world():
-    return 'Hello, World!'
-
-
-@app.route('/login')
-def login():
-    auth = request.authorization
-    if not auth or not auth.username or not auth.password:
-        return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
-
-    user = User.query.filter_by(login=auth.username).first()
-    if not user:
-        return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
-
-    if check_password_hash(user.password, auth.password):
-        token = jwt.encode({'user': auth.username,
-                            'exp': datetime.datetime.utcnow() + INTERVAL},
-                           app.config['SECRET_KEY'])
-
-        return jsonify({'token': token})
-
-    return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
-
-
-@app.route('/users', methods=['GET'])
-def get_all_users():
-    users = User.query.all()
-    output = []
-    for user in users:
-        user_data = {}
-        user_data['id'] = user.id
-        user_data['login'] = user.login
-        user_data['password'] = user.password
-        user_data['admin'] = user.admin
-        output.append(user_data)
-    return jsonify({'users': output})
-
-
-@app.route('/user/<login>', methods=['GET'])
-def get_one_user(login):
-    user = User.query.filter_by(login=login).first()
-    if not user:
-        return jsonify({'message': 'No user found'})
-
-    user_data = {}
-    user_data['login'] = user.login
-    user_data['password'] = user.password
-    user_data['admin'] = user.admin
-    return jsonify({'user': user_data})
-
-
-@app.route('/user', methods=['POST'])
-def create_user():
-    data = request.get_json()
-    hashed_password = generate_password_hash(data['password'], method='sha256')
-    new_user = User(login=data['login'],
-                    password=hashed_password)
-    db.session.add(new_user)
-    db.session.commit()
-    return jsonify({'message': 'New user created'})
-
-
-@app.route('/user/<login>', methods=['PUT'])
-def promote_user(login):
-    user = User.query.filter_by(login=login).first()
-    if not user:
-        return jsonify({'message': 'No user found'})
-
-    user.admin = True
-    db.session.commit()
-    return jsonify({'message': 'User has been promoted'})
-
-
-@app.route('/user/<login>', methods=['DELETE'])
-def delete_user(login):
-    user = User.query.filter_by(login=login).first()
-    if not user:
-        return jsonify({'message': 'No user found'})
-    db.session.delete(user)
-    db.session.commit()
-    return jsonify({'message': 'User has been deleted'})
-
+############################################
 
 def main():
     init_db(app)
