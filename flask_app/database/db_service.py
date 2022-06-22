@@ -36,3 +36,8 @@ def create_user(username, password):
 
     return new_user
 
+
+def change_login(user: User, new_login: str):
+    user.login = new_login
+    db.session.commit()
+

@@ -9,7 +9,7 @@ from flask_jwt_extended import jwt_required
 from werkzeug.security import check_password_hash
 from flasgger import Swagger, SwaggerView, Schema, fields
 
-from database.db_service import add_record_to_login_history, create_user
+from database.db_service import add_record_to_login_history, create_user, change_login
 from database.dm_models import User, LoginHistory
 from database.redis_db import redis_app
 
@@ -159,7 +159,7 @@ def refresh():
     jti = token["jti"]
     user_agent = request.headers['user_agent']
     key = ':'.join(('user_refresh', user_agent, jti))
-    user_db = storage.post_login().decode('utf-8')
+    user_db = storage.get(key).decode('utf-8')
     if identity == user_db:
         access_token = create_access_token(identity=identity)
         refresh_token = create_refresh_token(identity=identity)
@@ -192,9 +192,40 @@ def login_history():
     return jsonify(login_history=output)
 
 
-@jwt_required()
-def change_login():
-    return ''
+
+class ChangeLogin(SwaggerView):
+    parameters = [
+        {
+            "name": "new_username",
+            'in': "query",
+            "type": "string",
+            "required": True
+        },
+    ]
+    responses = {
+        200: {
+            "description": "Username was successfully changed"
+        },
+        400: {
+            "description": "Login already existed"
+        }
+    }
+
+    @jwt_required()
+    def post(self):
+
+        new_username = request.json.get('new_username')
+        user = User.query.filter_by(login=new_username).first()
+        if user:
+            return make_response('Login already existed', 400)
+
+        identity = get_jwt_identity()  # user_id - current_user
+        current_user = User.query.filter_by(id=identity).first()
+        change_login(current_user, new_username)
+
+        return jsonify(msg='Login successfully changed')
+
+
 
 
 @jwt_required()
