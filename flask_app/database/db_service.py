@@ -41,3 +41,10 @@ def change_login(user: User, new_login: str):
     user.login = new_login
     db.session.commit()
 
+
+def change_password(user: User, new_password: str):
+    hashed_password = generate_password_hash(new_password, method='sha256')
+    user.password = hashed_password
+    db.session.commit()
+
+

@@ -9,7 +9,8 @@ from flask_jwt_extended import jwt_required
 from werkzeug.security import check_password_hash
 from flasgger import Swagger, SwaggerView, Schema, fields
 
-from database.db_service import add_record_to_login_history, create_user, change_login
+from database.db_service import add_record_to_login_history, \
+    create_user, change_login, change_password
 from database.dm_models import User, LoginHistory
 from database.redis_db import redis_app
 
@@ -227,7 +228,42 @@ class ChangeLogin(SwaggerView):
 
 
 
+class ChangePassword(SwaggerView):
+    parameters = [
+        {
+            "name": "new_password",
+            'in': "query",
+            "type": "string",
+            "required": True
+        },
+    ]
+    responses = {
+        200: {
+            "description": "Password was successfully changed"
+        },
+        400: {
+            "description": "Could not change password"
+        }
+    }
 
-@jwt_required()
-def change_password():
-    return ''
+    @jwt_required()
+    def post(self):
+
+        new_password = request.json.get('new_password')
+
+        identity = get_jwt_identity()  # user_id - current_user
+        current_user = User.query.filter_by(id=identity).first()
+        change_password(current_user, new_password)
+
+        access_token = create_access_token(identity=identity, fresh=True)
+        refresh_token = create_refresh_token(identity=identity)
+        user_agent = request.headers['user_agent']
+
+        # запись в Redis refresh token
+        key = ':'.join(('user_refresh', user_agent, get_jti(refresh_token)))
+        storage.set(key, str(identity), ex=REFRESH_EXPIRES)
+
+        return jsonify(msg='Password successfully changed',
+                       access_token=access_token,
+                       refresh_token=refresh_token)
+

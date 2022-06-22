@@ -6,7 +6,7 @@ from flask_jwt_extended import JWTManager
 from flask_restx import Api
 
 from api.v1.personal_account import Sing_UpView, LoginView, LogoutView, refresh, \
-    login_history, ChangeLogin, change_password
+    login_history, ChangeLogin, ChangePassword
 from database.db import db
 from database.db import init_db
 from database.redis_db import redis_app
@@ -56,7 +56,7 @@ swagger = Swagger(app, template=swagger_template)
 
 
 app.add_url_rule('/change_login', methods=["POST"], view_func=ChangeLogin.as_view('change_login'))
-app.add_url_rule('/change_password', methods=["POST"], view_func=change_password)
+app.add_url_rule('/change_password', methods=["POST"], view_func=ChangePassword.as_view('change_password'))
 app.add_url_rule('/login', methods=["POST"], view_func=LoginView.as_view('login'))
 app.add_url_rule('/login_history', methods=["GET"], view_func=login_history)
 app.add_url_rule('/logout', methods=["DELETE"], view_func=LogoutView.as_view('logout'))
