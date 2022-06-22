@@ -1,8 +1,9 @@
 from datetime import datetime
 
+from werkzeug.security import generate_password_hash
+
 from database.db import db
 from .dm_models import User, LoginHistory, RefreshTokens
-from flask_jwt_extended import get_jwt
 
 
 def get_user_by_login(login: str) -> User:
@@ -25,4 +26,13 @@ def add_refresh_token_to_db(user, refresh_token):
                                refresh_token=refresh_token)
     db.session.add(new_record)
     db.session.commit()
+
+def create_user(username, password):
+    hashed_password = generate_password_hash(password, method='sha256')
+    new_user = User(login=username,
+                    password=hashed_password)
+    db.session.add(new_user)
+    db.session.commit()
+
+    return new_user
 

@@ -3,43 +3,99 @@ from datetime import timedelta
 from flask import jsonify, request, make_response
 from flask_jwt_extended import create_access_token
 from flask_jwt_extended import create_refresh_token
-from flask_jwt_extended import get_jwt
+from flask_jwt_extended import get_jti, get_jwt
 from flask_jwt_extended import get_jwt_identity
 from flask_jwt_extended import jwt_required
 from werkzeug.security import check_password_hash
+from flasgger import Swagger, SwaggerView, Schema, fields
 
-from database.db_service import add_record_to_login_history, \
-    add_refresh_token_to_db
-from database.dm_models import User, LoginHistory, RefreshTokens
+from database.db_service import add_record_to_login_history, create_user
+from database.dm_models import User, LoginHistory
 from database.redis_db import redis_app
+
+from models.pers_acc_models import JWT_Tokens
 
 ACCESS_EXPIRES = timedelta(hours=1)
 REFRESH_EXPIRES = timedelta(days=30)
 
-class Personal_Acc():
-
-    def sign_up(self):
-        """
-        регистрация нового пользователя
-        """
-        # в запросе приходят логин и пароль
-        # - проверяем, что такого пользователя в БД нет
-        # - создаем нового пользователя
-        # - отправляем access и refresh токены
-        # - refresh-токены добавляем в psql с привязкой к пользователю
+storage = redis_app
 
 
-        return ''
+class Sing_UpView(SwaggerView):
+    parameters = [
+        {
+            "name": "username",
+            'in': "query",
+            "type": "string",
+            "required": True
+        },
+        {
+            "name": "password",
+            'in': "query",
+            "type": "string",
+            "required": True
+        }
+    ]
+    responses = {
+        200: {
+            "description": "User's sing up. Get access and refresh JWT-tokens",
+            "schema": JWT_Tokens
+        },
+        401: {
+            "description": "Login and password required"
+        }
+    }
 
-    def login(self):
-        """
-        Вход пользователя в аккаунт:
-        обмен логина и пароля на пару токенов:
-        JWT-access токен и refresh токен);
-        """
+    def post(self):
+        username = request.values.get("username", None)
+        password = request.values.get("password", None)
+        if not username or not password:
+            return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
+
+        new_user = create_user(username, password)
+
+        access_token = create_access_token(identity=new_user.id, fresh=True)
+        refresh_token = create_refresh_token(identity=new_user.id)
+        user_agent = request.headers['user_agent']
+
+        # запись в БД попытки входа
+        add_record_to_login_history(new_user, user_agent)
+
+        # запись в Redis refresh token
+        key = ':'.join(('user_refresh', user_agent, get_jti(refresh_token)))
+        storage.set(key, str(new_user.id), ex=REFRESH_EXPIRES)
+
+        return jsonify(access_token=access_token,
+                       refresh_token=refresh_token)
+
+
+class LoginView(SwaggerView):
+    parameters = []
+    security = {"BasicAuth": []}
+    responses = {
+        200: {
+            "description": "Login into account. Get access and refresh JWT-tokens",
+            "schema": JWT_Tokens
+        },
+        401: {
+            "description": "Could not verify login or password"
+        }
+    }
+    # components = {
+    #     "securitySchemes": {
+    #         "BasicAuth": {
+    #             "type": "http",
+    #             "scheme": "basic"}}}
+    #
+
+    def post(self):
+
         auth = request.authorization
 
         if not auth.username or not auth.password:
+            # username = request.values.get("username", None)
+            # password = request.values.get("password", None)
+            # if not username or not password:
             return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
 
         user = User.query.filter_by(login=auth.username).first()
@@ -54,69 +110,93 @@ class Personal_Acc():
             # запись в БД попытки входа
             add_record_to_login_history(user, user_agent)
 
-            # запись в БД refresh token
-            add_refresh_token_to_storage(user, refresh_token)
+            # запись в Redis refresh token
+            key = ':'.join(('user_refresh', user_agent, get_jti(refresh_token)))
+            storage.set(key, str(user.id), ex=REFRESH_EXPIRES)
 
             return jsonify(access_token=access_token,
                            refresh_token=refresh_token)
 
         return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
 
-    # user’s refresh token must also be revoked when logging out;
-    # otherwise, this refresh token could just be used to generate a new access token.
+
+# user’s refresh token must also be revoked when logging out;
+# otherwise, this refresh token could just be used to generate a new access token.
+class LogoutView(SwaggerView):
+    # security = {"bearerAuth": []}
+    responses = {
+        200: {
+            "description": "revoke access/refresh token",
+        },
+        401: {
+            "description": "Could not verify token"
+        }
+    }
+
     @jwt_required(verify_type=False)
-    def logout(self):
-        # добавить user_agent
+    def delete(self):
         token = get_jwt()
         jti = token["jti"]
         ttype = token["type"]
         user_agent = request.headers['user_agent']
-        redis_app.set(jti, "", ex=ACCESS_EXPIRES)
+        key = ':'.join((jti, user_agent))
+        redis_app.set(key, "", ex=ACCESS_EXPIRES)
 
         # Returns "Access token revoked" or "Refresh token revoked"
         return jsonify(msg=f"{ttype.capitalize()} token successfully revoked")
 
-    # We are using the `refresh=True` options in jwt_required to only allow
-    # refresh tokens to access this route.
-    @jwt_required(refresh=True)
-    def refresh(self):
-        """
-        выдаёт новую пару токенов (access и refresh) в обмен на корректный refresh-токен.
-        """
-        identity = get_jwt_identity() # user_id
-        # Проверка, что пользователь тот же
-        token = get_jwt()
-        jti = token["jti"]
-        user_db = RefreshTokens.query.filter_by(refresh_token=jti).first()
-        if identity == user_db.user_id:
-            access_token = create_access_token(identity=identity)
-            refresh_token = create_refresh_token(identity=identity)
-            return jsonify(access_token=access_token,
-                           refresh_token=refresh_token)
 
-        return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
+# We are using the `refresh=True` options in jwt_required to only allow
+# refresh tokens to access this route.
+@jwt_required(refresh=True)
+def refresh():
+    """
+    выдаёт новую пару токенов (access и refresh) в обмен на корректный refresh-токен.
+    """
+    identity = get_jwt_identity()  # user_id
+    # Проверка, что пользователь тот же
+    token = get_jwt()
+    jti = token["jti"]
+    user_agent = request.headers['user_agent']
+    key = ':'.join(('user_refresh', user_agent, jti))
+    user_db = storage.post_login().decode('utf-8')
+    if identity == user_db:
+        access_token = create_access_token(identity=identity)
+        refresh_token = create_refresh_token(identity=identity)
 
-    @jwt_required()
-    def login_history(self):
-        """
-        получение пользователем своей истории входов в аккаунт
-        """
-        user_id = get_jwt_identity()
+        # запись в Redis refresh token
+        key = ':'.join(('user_refresh', user_agent, get_jti(refresh_token)))
+        storage.set(key, identity, ex=REFRESH_EXPIRES)
 
-        history = LoginHistory.query.filter_by(user_id=user_id).\
-            order_by(LoginHistory.auth_date.desc()).\
-            limit(10)
-        output = []
-        for record in history:
-            record_data = {'user_agent': record.user_agent,
-                           'auth_date': record.auth_date}
-            output.append(record_data)
-        return jsonify(login_history=output)
+        return jsonify(access_token=access_token,
+                       refresh_token=refresh_token)
 
-    @jwt_required()
-    def change_login(self):
-        return ''
+    return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
 
-    @jwt_required()
-    def change_password(self):
-        return ''
+
+@jwt_required()
+def login_history():
+    """
+    получение пользователем своей истории входов в аккаунт
+    """
+    user_id = get_jwt_identity()
+
+    history = LoginHistory.query.filter_by(user_id=user_id). \
+        order_by(LoginHistory.auth_date.desc()). \
+        limit(10)
+    output = []
+    for record in history:
+        record_data = {'user_agent': record.user_agent,
+                       'auth_date': record.auth_date}
+        output.append(record_data)
+    return jsonify(login_history=output)
+
+
+@jwt_required()
+def change_login():
+    return ''
+
+
+@jwt_required()
+def change_password():
+    return ''
