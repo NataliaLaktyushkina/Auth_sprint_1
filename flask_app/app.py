@@ -8,6 +8,7 @@ from flask_restx import Api
 from api.v1.personal_account import SingUpView, LoginView, LogoutView, refresh, \
     login_history, ChangeLogin, ChangePassword
 from api.v1.roles import CreateRoleView, DeleteRoleView,  ChangeRoleView, RolesListView
+from api.v1.users_roles import UsersRolesListView, AssignRoleToUserView, DetachRoleView
 from database.db import db
 from database.db import init_db
 from database.db_service import get_users_roles
@@ -66,6 +67,10 @@ app.add_url_rule('/create_role', methods=["POST"], view_func=CreateRoleView.as_v
 app.add_url_rule('/delete_role', methods=["DELETE"], view_func=DeleteRoleView.as_view('delete_role'))
 app.add_url_rule('/change_role', methods=["PUT"], view_func=ChangeRoleView.as_view('change_role'))
 app.add_url_rule('/roles_list', methods=["GET"], view_func=RolesListView.as_view('roles_list'))
+
+app.add_url_rule('/users_roles', methods=["GET"], view_func=UsersRolesListView.as_view('users_roles'))
+app.add_url_rule('/assign_role', methods=["POST"], view_func=AssignRoleToUserView.as_view('assign_role'))
+app.add_url_rule('/detach_role', methods=["DELETE"], view_func=DetachRoleView.as_view('detach_role'))
 
 
 @jwt.token_in_blocklist_loader

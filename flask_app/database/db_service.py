@@ -57,6 +57,7 @@ def get_users_roles(user_id : uuid) -> List[Roles]:
         return users_roles
     return []
 
+
 def delete_role_db(role_name: str):
     db.session.query(Roles).filter_by(name=role_name).delete()
     db.session.commit()
@@ -66,3 +67,31 @@ def change_role_db(role_name: str, new_name: str):
     role = Roles.query.filter_by(name=role_name).first()
     role.name = new_name
     db.session.commit()
+
+
+def get_roles_by_user(username: str) -> List[Roles]:
+    user = User.query.filter_by(login=username).first()
+    roles = UsersRoles.query.filter_by(user_id=user.id).all()
+    output = []
+    for role in roles:
+        role = Roles.query.filter_by(id=role.role_id).first()
+        output.append(role)
+    return output
+
+
+def assign_role_to_user(username: str, role_name: str):
+    user = User.query.filter_by(login=username).first()
+    role = Roles.query.filter_by(name=role_name).first()
+    new_assignment = UsersRoles(user_id=user.id,
+                                role_id=role.id)
+    db.session.add(new_assignment)
+    db.session.commit()
+
+
+def detach_role_from_user(username: str, role_name: str):
+    user = User.query.filter_by(login=username).first()
+    role = Roles.query.filter_by(name=role_name).first()
+    db.session.query(UsersRoles).filter_by(user_id=user.id,
+                                           role_id=role.id).delete()
+    db.session.commit()
+

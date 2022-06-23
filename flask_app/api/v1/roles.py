@@ -1,19 +1,9 @@
-from datetime import timedelta
-
 from flasgger import SwaggerView
 from flask import jsonify, request, make_response
-from flask_jwt_extended import create_access_token
-from flask_jwt_extended import create_refresh_token
-from flask_jwt_extended import get_jti, get_jwt
-from flask_jwt_extended import get_jwt_identity
 from flask_jwt_extended import jwt_required
-from werkzeug.security import check_password_hash
 
-from database.db_service import add_record_to_login_history, \
-    create_user, change_login, change_password, create_role_db, delete_role_db, change_role_db
-from database.dm_models import User, Roles, UsersRoles
-from database.redis_db import redis_app
-from models.pers_acc_models import JWT_Tokens
+from database.db_service import create_role_db, delete_role_db, change_role_db
+from database.dm_models import Roles
 
 
 class CreateRoleView(SwaggerView):
