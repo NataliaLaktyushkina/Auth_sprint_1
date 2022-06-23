@@ -91,7 +91,8 @@ def add_role_to_token(identity):
     callback function used to add additional claims when creating a JWT
     """
     roles = get_users_roles(identity)
-    return {'roles': roles}
+    output = [role.name for role in roles]
+    return {'roles': output}
 ############################################
 
 def main():

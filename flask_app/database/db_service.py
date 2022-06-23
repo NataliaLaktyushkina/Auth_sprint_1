@@ -53,9 +53,13 @@ def create_role_db(role_name: str) -> Roles:
 
 def get_users_roles(user_id : uuid) -> List[Roles]:
     users_roles = UsersRoles.query.filter_by(user_id=user_id).all()
-    if users_roles:
-        return users_roles
-    return []
+    if not users_roles:
+        return []
+    output = []
+    for role in users_roles:
+        role = Roles.query.filter_by(id=role.role_id).first()
+        output.append(role)
+    return output
 
 
 def delete_role_db(role_name: str):
