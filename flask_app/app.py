@@ -5,10 +5,12 @@ from flask import request
 from flask_jwt_extended import JWTManager
 from flask_restx import Api
 
-from api.v1.personal_account import Sing_UpView, LoginView, LogoutView, refresh, \
+from api.v1.personal_account import SingUpView, LoginView, LogoutView, refresh, \
     login_history, ChangeLogin, ChangePassword
+from api.v1.roles import CreateRoleView, DeleteRoleView,  ChangeRoleView, RolesListView
 from database.db import db
 from database.db import init_db
+from database.db_service import get_users_roles
 from database.redis_db import redis_app
 from utils import settings
 from flasgger import Swagger
@@ -35,8 +37,7 @@ swagger_template = {"components": {
            }}}
 }
 
-# swagger = Swagger(app, template=swagger_template)
-# swagger = Swagger(app)
+swagger = Swagger(app, template=swagger_template)
 # authorizations = {
 #     'Bearer Auth': {
 #         'type': 'apiKey',
@@ -52,8 +53,6 @@ swagger_template = {"components": {
 #     },
 # }
 jwt = JWTManager(app)
-swagger = Swagger(app, template=swagger_template)
-
 
 app.add_url_rule('/change_login', methods=["POST"], view_func=ChangeLogin.as_view('change_login'))
 app.add_url_rule('/change_password', methods=["POST"], view_func=ChangePassword.as_view('change_password'))
@@ -61,7 +60,12 @@ app.add_url_rule('/login', methods=["POST"], view_func=LoginView.as_view('login'
 app.add_url_rule('/login_history', methods=["GET"], view_func=login_history)
 app.add_url_rule('/logout', methods=["DELETE"], view_func=LogoutView.as_view('logout'))
 app.add_url_rule('/refresh', methods=["GET"], view_func=refresh)
-app.add_url_rule('/sign_up', methods=["POST"], view_func=Sing_UpView.as_view('sign_up'))
+app.add_url_rule('/sign_up', methods=["POST"], view_func=SingUpView.as_view('sign_up'))
+
+app.add_url_rule('/create_role', methods=["POST"], view_func=CreateRoleView.as_view('create_role'))
+app.add_url_rule('/delete_role', methods=["DELETE"], view_func=DeleteRoleView.as_view('delete_role'))
+app.add_url_rule('/change_role', methods=["PUT"], view_func=ChangeRoleView.as_view('change_role'))
+app.add_url_rule('/roles_list', methods=["GET"], view_func=RolesListView.as_view('roles_list'))
 
 
 @jwt.token_in_blocklist_loader
@@ -76,6 +80,13 @@ def check_if_token_is_revoked(jwt_header, jwt_payload: dict):
     return token_in_redis is not None
 
 
+@jwt.additional_claims_loader
+def add_role_to_token(identity):
+    """
+    callback function used to add additional claims when creating a JWT
+    """
+    roles = get_users_roles(identity)
+    return {'roles': roles}
 ############################################
 
 def main():

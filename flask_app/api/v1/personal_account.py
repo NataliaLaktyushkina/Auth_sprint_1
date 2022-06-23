@@ -1,5 +1,6 @@
 from datetime import timedelta
 
+from flasgger import SwaggerView
 from flask import jsonify, request, make_response
 from flask_jwt_extended import create_access_token
 from flask_jwt_extended import create_refresh_token
@@ -7,13 +8,11 @@ from flask_jwt_extended import get_jti, get_jwt
 from flask_jwt_extended import get_jwt_identity
 from flask_jwt_extended import jwt_required
 from werkzeug.security import check_password_hash
-from flasgger import Swagger, SwaggerView, Schema, fields
 
 from database.db_service import add_record_to_login_history, \
     create_user, change_login, change_password
 from database.dm_models import User, LoginHistory
 from database.redis_db import redis_app
-
 from models.pers_acc_models import JWT_Tokens
 
 ACCESS_EXPIRES = timedelta(hours=1)
@@ -22,7 +21,8 @@ REFRESH_EXPIRES = timedelta(days=30)
 storage = redis_app
 
 
-class Sing_UpView(SwaggerView):
+class SingUpView(SwaggerView):
+    tags = ["Personal account"]
     parameters = [
         {
             "name": "username",
@@ -71,6 +71,7 @@ class Sing_UpView(SwaggerView):
 
 
 class LoginView(SwaggerView):
+    tags = ["Personal account"]
     parameters = []
     security = {"BasicAuth": []}
     responses = {
@@ -124,6 +125,7 @@ class LoginView(SwaggerView):
 # user’s refresh token must also be revoked when logging out;
 # otherwise, this refresh token could just be used to generate a new access token.
 class LogoutView(SwaggerView):
+    tags = ["Personal account"]
     # security = {"bearerAuth": []}
     responses = {
         200: {
@@ -193,8 +195,8 @@ def login_history():
     return jsonify(login_history=output)
 
 
-
 class ChangeLogin(SwaggerView):
+    tags = ["Personal account"]
     parameters = [
         {
             "name": "new_username",
@@ -227,8 +229,8 @@ class ChangeLogin(SwaggerView):
         return jsonify(msg='Login successfully changed')
 
 
-
 class ChangePassword(SwaggerView):
+    tags = ["Personal account"]
     parameters = [
         {
             "name": "new_password",

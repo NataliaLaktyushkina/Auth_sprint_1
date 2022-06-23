@@ -1,9 +1,11 @@
+import uuid
 from datetime import datetime
+from typing import Optional, List
 
 from werkzeug.security import generate_password_hash
 
 from database.db import db
-from .dm_models import User, LoginHistory, RefreshTokens
+from .dm_models import User, LoginHistory, Roles, UsersRoles
 
 
 def get_user_by_login(login: str) -> User:
@@ -19,13 +21,6 @@ def add_record_to_login_history(user: User, user_agent: str):
     db.session.add(new_session)
     db.session.commit()
 
-
-def add_refresh_token_to_db(user, refresh_token):
-    # запись в БД refresh token
-    new_record = RefreshTokens(user_id=user.id,
-                               refresh_token=refresh_token)
-    db.session.add(new_record)
-    db.session.commit()
 
 def create_user(username, password):
     hashed_password = generate_password_hash(password, method='sha256')
@@ -48,3 +43,26 @@ def change_password(user: User, new_password: str):
     db.session.commit()
 
 
+def create_role_db(role_name: str) -> Roles:
+    new_role = Roles(name=role_name)
+    db.session.add(new_role)
+    db.session.commit()
+
+    return new_role
+
+
+def get_users_roles(user_id : uuid) -> List[Roles]:
+    users_roles = UsersRoles.query.filter_by(user_id=user_id).all()
+    if users_roles:
+        return users_roles
+    return []
+
+def delete_role_db(role_name: str):
+    db.session.query(Roles).filter_by(name=role_name).delete()
+    db.session.commit()
+
+
+def change_role_db(role_name: str, new_name: str):
+    role = Roles.query.filter_by(name=role_name).first()
+    role.name = new_name
+    db.session.commit()

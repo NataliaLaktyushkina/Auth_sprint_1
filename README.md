@@ -42,6 +42,24 @@
 - проверка access-токена
 - выдача последних 10 входов
 
+
+## Роли
+### Postgres tables:
+1. Roles - id, name, peermission
+2. UsersRoles 
+
+### endpoints:
+###/create_role  
+post  проверка прав- менеджер либо админ
+### /delente_role 
+delete проверка прав-менеджер либо админ 
+### /change_role 
+put проверка прав - менеджер либо админ
+### /roles_list 
+get проверка прав - менеджер либо админ
+
+Проверка прав через токен, в который записываем permissions.
+
 ##Storage:
 для блэк-листа и хранения refresh-токенов.
 В текущем API используется Redis
