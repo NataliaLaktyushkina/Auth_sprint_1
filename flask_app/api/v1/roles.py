@@ -1,5 +1,6 @@
 from flasgger import SwaggerView
 from flask import jsonify, request, make_response
+from flask_jwt_extended import get_jwt
 from flask_jwt_extended import jwt_required
 
 from database.db_service import create_role_db, delete_role_db, change_role_db
@@ -30,10 +31,10 @@ class CreateRoleView(SwaggerView):
 
     @jwt_required()
     def post(self):
-        # token = get_jwt()
-        # users_roles = token['roles']
-        # if 'manager' not in users_roles:
-        #     return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
+        token = get_jwt()
+        users_roles = token['roles']
+        if 'manager' not in users_roles:
+            return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
         role = request.json.get("new_role", None)
         if not role:
             return make_response('New role is empty', 401)
@@ -63,6 +64,11 @@ class DeleteRoleView(SwaggerView):
 
     @jwt_required()
     def delete(self):
+        token = get_jwt()
+        users_roles = token['roles']
+        if 'manager' not in users_roles:
+            return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
+
         role = request.json.get("role", None)
         if not role:
             return make_response('Role is empty', 401)
@@ -98,6 +104,11 @@ class ChangeRoleView(SwaggerView):
 
     @jwt_required()
     def put(self):
+        token = get_jwt()
+        users_roles = token['roles']
+        if 'manager' not in users_roles:
+            return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
+
         role = request.json.get("role", None)
         new_role = request.json.get("new_name", None)
         if not role or not new_role:

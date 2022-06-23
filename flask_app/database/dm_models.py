@@ -44,7 +44,3 @@ class UsersRoles(db.Model):
     id = db.Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4, unique=True, nullable=False)
     user_id = db.Column(UUID(as_uuid=True), ForeignKey(User.id))
     role_id = db.Column(UUID(as_uuid=True), ForeignKey(Roles.id))
-
-
-
-
