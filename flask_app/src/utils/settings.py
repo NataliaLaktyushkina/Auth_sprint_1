@@ -1,9 +1,9 @@
 import os
-from pydantic import BaseSettings
 
 from dotenv import load_dotenv
+from pydantic import BaseSettings
 
-load_dotenv()  # take environment variables from .env.
+load_dotenv()
 
 
 class Settings(BaseSettings):
@@ -13,7 +13,7 @@ class Settings(BaseSettings):
 
     SECRET_KEY = os.getenv('SECRET_KEY')
 
-    #postgres
+    # postgres
     USERNAME = os.getenv('POSTGRES_USER')
     PASSWORD = os.getenv('POSTGRES_PASSWORD')
     HOST = os.getenv('POSTGRES_HOST')
@@ -37,7 +37,7 @@ class TestSettings(Settings):
     REDIS_HOST: str
 
     class Config:
-        fields ={
+        fields = {
             "REDIS_HOST": {
                 'env': 'REDIS_HOST_DEBUG'
             }
@@ -46,7 +46,7 @@ class TestSettings(Settings):
 
 def get_settings():
     environment = os.getenv('ENVIRONMENT')
-    if environment=='dev':
+    if environment == 'dev':
         return get_dev_settings()
     else:
         return get_test_settings()

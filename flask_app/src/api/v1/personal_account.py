@@ -69,7 +69,6 @@ class SingUpView(SwaggerView):
         return jsonify(access_token=access_token,
                        refresh_token=refresh_token)
 
-
 class LoginView(SwaggerView):
     tags = ["Personal account"]
     parameters = []

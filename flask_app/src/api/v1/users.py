@@ -9,7 +9,7 @@ from database.dm_models import User
 
 
 @app.route('/user', methods=['POST'])
-def create_user():
+def create_user(username, password):
     data = request.get_json()
     hashed_password = generate_password_hash(data['password'], method='sha256')
     new_user = User(login=data['login'],
