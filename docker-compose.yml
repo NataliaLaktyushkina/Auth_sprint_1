@@ -21,3 +21,16 @@ services:
       - redis-server
     ports:
       - 6379:6379
+
+  auth_api:
+    container_name: auth_api
+    build:
+      context: flask_app
+    image: flask_app
+    depends_on:
+      - redis
+      - postgres
+    ports:
+      - 5001:5001
+    expose:
+      - "5001"

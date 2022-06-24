@@ -3,7 +3,6 @@ from datetime import timedelta
 from flask import Flask
 from flask import request
 from flask_jwt_extended import JWTManager
-from flask_restx import Api
 
 from api.v1.personal_account import SingUpView, LoginView, LogoutView, refresh, \
     login_history, ChangeLogin, ChangePassword
@@ -94,6 +93,7 @@ def add_role_to_token(identity):
     output = [role.name for role in roles]
     return {'roles': output}
 ############################################
+
 
 def main():
     init_db(app)
