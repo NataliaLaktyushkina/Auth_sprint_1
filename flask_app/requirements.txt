@@ -13,3 +13,4 @@ psycopg2-binary==2.8.6
 pydantic==1.9.1
 python-dotenv==0.20.0
 redis==4.2.2
+flask-swagger-ui==4.11.1
