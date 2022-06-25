@@ -8,6 +8,7 @@ from flask_jwt_extended import get_jti, get_jwt
 from flask_jwt_extended import get_jwt_identity
 from flask_jwt_extended import jwt_required
 from werkzeug.security import check_password_hash
+from flasgger import swag_from
 
 from database.db_service import add_record_to_login_history, \
     create_user, change_login, change_password
@@ -69,56 +70,40 @@ class SingUpView(SwaggerView):
         return jsonify(access_token=access_token,
                        refresh_token=refresh_token)
 
-class LoginView(SwaggerView):
-    tags = ["Personal account"]
-    parameters = []
-    security = {"BasicAuth": []}
-    responses = {
-        200: {
-            "description": "Login into account. Get access and refresh JWT-tokens",
-            "schema": JWT_Tokens
-        },
-        401: {
-            "description": "Could not verify login or password"
-        }
-    }
-    # components = {
-    #     "securitySchemes": {
-    #         "BasicAuth": {
-    #             "type": "http",
-    #             "scheme": "basic"}}}
-    #
 
-    def post(self):
+# class LoginView(SwaggerView):
+#     def post(self):
+@swag_from('swagger_config.yml')
+def login():
 
-        auth = request.authorization
+    auth = request.authorization
 
-        if not auth.username or not auth.password:
-            # username = request.values.get("username", None)
-            # password = request.values.get("password", None)
-            # if not username or not password:
-            return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
-
-        user = User.query.filter_by(login=auth.username).first()
-        if not user:
-            return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
-
-        if check_password_hash(user.password, auth.password):
-            access_token = create_access_token(identity=user.id, fresh=True)
-            refresh_token = create_refresh_token(identity=user.id)
-            user_agent = request.headers['user_agent']
-
-            # запись в БД попытки входа
-            add_record_to_login_history(user, user_agent)
-
-            # запись в Redis refresh token
-            key = ':'.join(('user_refresh', user_agent, get_jti(refresh_token)))
-            storage.set(key, str(user.id), ex=REFRESH_EXPIRES)
-
-            return jsonify(access_token=access_token,
-                           refresh_token=refresh_token)
-
+    if not auth.username or not auth.password:
+        # username = request.values.get("username", None)
+        # password = request.values.get("password", None)
+        # if not username or not password:
         return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
+
+    user = User.query.filter_by(login=auth.username).first()
+    if not user:
+        return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
+
+    if check_password_hash(user.password, auth.password):
+        access_token = create_access_token(identity=user.id, fresh=True)
+        refresh_token = create_refresh_token(identity=user.id)
+        user_agent = request.headers['user_agent']
+
+        # запись в БД попытки входа
+        add_record_to_login_history(user, user_agent)
+
+        # запись в Redis refresh token
+        key = ':'.join(('user_refresh', user_agent, get_jti(refresh_token)))
+        storage.set(key, str(user.id), ex=REFRESH_EXPIRES)
+
+        return jsonify(access_token=access_token,
+                       refresh_token=refresh_token)
+
+    return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
 
 
 # user’s refresh token must also be revoked when logging out;
