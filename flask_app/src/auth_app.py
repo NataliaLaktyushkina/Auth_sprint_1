@@ -22,20 +22,14 @@ app = Flask(__name__)
 app.config["JWT_SECRET_KEY"] = settings.get_settings().SECRET_KEY
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = ACCESS_EXPIRES
 app.config["JWT_REFRESH_TOKEN_EXPIRES"] = REFRESH_EXPIRES
-# app.config['SWAGGER'] = {'title': 'Auth API'}
-
 
 # Create an APISpec
 template = {
   "swagger": "2.0",
   "info": {
-    "title": "Flask Restful Swagger Demo",
-    "description": "A Demof for the Flask-Restful Swagger Demo",
-    "version": "0.1.1",
-    "contact": {
-      "name": "Kanoki",
-      "url": "https://Kanoki.org",
-    }
+    "title": "Auth API",
+    "description": "API for personal account, roles",
+    "version": "1.0",
   },
   "securityDefinitions": {
     "Bearer": {
@@ -43,6 +37,11 @@ template = {
       "name": "Authorization",
       "in": "header",
       "description": "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\""
+    },
+    "BaseAuth": {
+        "type": 'basic',
+        "in": 'header',
+        "name": 'Authorization'
     }
   },
   "security": [
@@ -54,45 +53,17 @@ template = {
 }
 
 app.config['SWAGGER'] = {
-    'title': 'My API',
     'uiversion': 3,
-    "specs_route": "/swagger/"
+    "specs_route": "/apidocs/"
 }
 
-swagger = Swagger(app, template= template)
-# swagger_template = {"components": {
-#     "securitySchemes": {
-#         "bearerAuth": {
-#             "type": "http",
-#             "scheme": "bearer",
-#             "bearerFormat": "JWT",
-#            },
-#         "BasicAuth": {
-#             "type": "http",
-#             "scheme": "basic",
-#            }}}
-# }
+swagger = Swagger(app, template=template)
 
-# swagger = Swagger(app, config=swagger_template)
-# swagger = Swagger(app)
-# authorizations = {
-#     'Bearer Auth': {
-#         'type': 'apiKey',
-#         'in': 'header',
-#         'name': 'Authorization'
-#     },
-# }
-# authorizations = {
-#     'Basic Auth': {
-#         'type': 'basic',
-#         'in': 'header',
-#         'name': 'Authorization'
-#     },
-# }
 jwt = JWTManager(app)
 
 app.add_url_rule('/change_login', methods=["POST"], view_func=ChangeLogin.as_view('change_login'))
 app.add_url_rule('/change_password', methods=["POST"], view_func=ChangePassword.as_view('change_password'))
+# app.add_url_rule('/login', methods=["POST"], view_func=LoginView.as_view('login'))
 app.add_url_rule('/login', methods=["POST"], view_func=login)
 app.add_url_rule('/login_history', methods=["GET"], view_func=login_history)
 app.add_url_rule('/logout', methods=["DELETE"], view_func=LogoutView.as_view('logout'))

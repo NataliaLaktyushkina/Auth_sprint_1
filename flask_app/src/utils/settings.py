@@ -27,12 +27,12 @@ class Settings(BaseSettings):
         env_file_encoding = 'utf-8'
 
 
-class DevSettings(Settings):
+class PromSettings(Settings):
 
     REDIS_HOST: str = os.getenv('REDIS_HOST')
 
 
-class TestSettings(Settings):
+class DevSettings(Settings):
 
     REDIS_HOST: str
 
@@ -46,14 +46,14 @@ class TestSettings(Settings):
 
 def get_settings():
     environment = os.getenv('ENVIRONMENT')
-    if environment == 'dev':
-        return get_dev_settings()
+    if environment == 'prom':
+        return get_prom_settings()
     else:
-        return get_test_settings()
+        return get_dev_settings()
 
 
-def get_test_settings():
-    return TestSettings()
+def get_prom_settings():
+    return PromSettings()
 
 
 def get_dev_settings():

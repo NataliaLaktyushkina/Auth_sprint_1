@@ -70,11 +70,20 @@ class SingUpView(SwaggerView):
         return jsonify(access_token=access_token,
                        refresh_token=refresh_token)
 
-
+#
 # class LoginView(SwaggerView):
-#     def post(self):
-@swag_from('swagger_config.yml')
+#     tags = ["Personal account"]
+#     security = {
+#         "BasicAuth": [ ]
+#     }
+
 def login():
+    """
+    ---
+
+    security:
+     - BaseAuth: []
+    """
 
     auth = request.authorization
 
