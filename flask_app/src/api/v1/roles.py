@@ -11,7 +11,7 @@ def create_role():
     users_roles = token['roles']
     if 'manager' not in users_roles:
         return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
-    role = request.json.get("new_role", None)
+    role = request.values.get("new_role", None)
     if not role:
         return make_response('New role is empty', 401)
 
