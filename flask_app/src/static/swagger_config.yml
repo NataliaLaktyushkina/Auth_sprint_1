@@ -131,6 +131,8 @@ paths:
     post:
       tags:
         - Personal account
+      security:
+        - [ ]
       parameters:
         - in: query
           name: username

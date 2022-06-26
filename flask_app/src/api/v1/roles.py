@@ -11,7 +11,7 @@ def create_role():
     users_roles = token['roles']
     if 'manager' not in users_roles:
         return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
-    role = request.values.get("new_role", None)
+    role =request.args.get('new_role', None)
     if not role:
         return make_response('New role is empty', 401)
 
@@ -26,11 +26,13 @@ def delete_role():
     if 'manager' not in users_roles:
         return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
 
-    role = request.json.get("role", None)
+    role = request.args.get("role", None)
     if not role:
         return make_response('Role is empty', 401)
-
-    delete_role_db(role)
+    db_role = Roles.query.filter_by(name=role).first()
+    if not db_role:
+        return  make_response('Role does not exist', 409)
+    delete_role_db(db_role)
     return jsonify(msg=f'Role {role} was successfully deleted')
 
 
@@ -41,8 +43,8 @@ def change_role():
     if 'manager' not in users_roles:
         return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
 
-    role = request.json.get("role", None)
-    new_role = request.json.get("new_name", None)
+    role = request.args.get("role", None)
+    new_role = request.args.get("new_name", None)
     if not role or not new_role:
         return make_response('Role or new name is empty', 401)
 
