@@ -1,16 +1,10 @@
-from http import HTTPStatus
 import base64
+from http import HTTPStatus
 
-import pytest
 
-class TestPersonalAcc:
-    @pytest.mark.asyncio
-    async def test_login(self, make_get_request):
-        # make response
-        path = '/login'
-        valid_credentials = base64.b64encode(b"testuser:testpassword").decode("utf-8")
-        headers = {"Authorization": "Basic " + valid_credentials}
-
-        response = await make_get_request(path, headers)
-
-        assert response.status == HTTPStatus.OK
+def test_login(app_with_data):
+    valid_credentials = base64.b64encode(b"first_user:12345").decode("utf-8")
+    headers = {"Authorization": "Basic " + valid_credentials}
+    with app_with_data as c:
+        response = c.post('/login', headers=headers)
+        assert response.status_code == HTTPStatus.OK

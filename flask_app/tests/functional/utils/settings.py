@@ -1,19 +1,24 @@
 import os
-from pydantic import BaseSettings
 
 from dotenv import load_dotenv
+from pydantic import BaseSettings
 
-load_dotenv()  # take environment variables from .env.
+load_dotenv()
 
 
 class Settings(BaseSettings):
 
-    PROJECT_NAME: str = os.getenv('PROJECT_NAME', 'auth_api')
     # Корень проекта
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-    SERVICE_URL: str = os.getenv("SERVICE_URL")
-    URL_API_V1: str = os.getenv("URL_API_V1")
+    SECRET_KEY = os.getenv('SECRET_KEY')
+
+    # postgres
+    USERNAME = os.getenv('POSTGRES_USER')
+    PASSWORD = os.getenv('POSTGRES_PASSWORD')
+    HOST = os.getenv('POSTGRES_HOST')
+    PORT = os.getenv('POSTGRES_PORT')
+    DATABASE_NAME = os.getenv('POSTGRES_DB')
 
     REDIS_PORT: str = os.getenv('REDIS_PORT')
 
@@ -22,12 +27,12 @@ class Settings(BaseSettings):
         env_file_encoding = 'utf-8'
 
 
-class DevSettings(Settings):
+class PromSettings(Settings):
 
     REDIS_HOST: str = os.getenv('REDIS_HOST')
 
 
-class PromSettings(Settings):
+class DevSettings(Settings):
 
     REDIS_HOST: str
 

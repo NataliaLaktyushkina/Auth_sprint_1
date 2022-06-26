@@ -81,7 +81,7 @@ def main():
     init_db(app)
     app.app_context().push()
     db.create_all()
-    app.run()
+    # app.run()
 
 
 if __name__ == '__main__':

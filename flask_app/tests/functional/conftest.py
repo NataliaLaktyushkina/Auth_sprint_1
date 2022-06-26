@@ -1,59 +1,67 @@
-import asyncio
-from dataclasses import dataclass
-from typing import Optional
+from datetime import timedelta
 
-import aiohttp
-import aioredis
 import pytest
-from elasticsearch import AsyncElasticsearch
+from flask import Flask
+from flask_sqlalchemy import SQLAlchemy
 
 from utils import settings
 
+db_settings = settings.get_settings()
+
+ACCESS_EXPIRES = timedelta(hours=1)
+REFRESH_EXPIRES = timedelta(days=30)
+username = db_settings.USERNAME
+password = db_settings.PASSWORD
+host = db_settings.HOST
+port = db_settings.PORT
+host_port = ':'.join((host, port))
+database_name = db_settings.DATABASE_NAME
+
 app_settings = settings.get_settings()
 
-@dataclass
-class HTTPResponse:
-    body: dict
-    headers: [str]
-    status: int
+db = SQLAlchemy()
 
 
-@pytest.fixture(scope='session')
-async def session():
-    async with aiohttp.ClientSession() as session:
-        yield session
+def create_app():
+
+    app = Flask(__name__)
+
+    app.config["JWT_SECRET_KEY"] = settings.get_settings().SECRET_KEY
+    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = ACCESS_EXPIRES
+    app.config["JWT_REFRESH_TOKEN_EXPIRES"] = REFRESH_EXPIRES
 
 
-@pytest.fixture(scope='session')
-async def redis_client():
-    client = await aioredis.create_redis_pool((app_settings.REDIS_HOST, app_settings.REDIS_PORT), minsize=10, maxsize=20)
-    # Clean cache
-    client.flushall()
-    yield client
-    await client.wait_closed()
+    app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://{username}:{password}@{host_port}/{database_name}'
+    app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
+    db.app = app
+    db.init_app(app)
 
-
-@pytest.fixture(scope='session', autouse=True)
-def event_loop():
-    """Create an instance of the default event loop for each test case."""
-    # loop = asyncio.get_event_loop_policy().new_event_loop()
-    # yield loop
-    # loop.close()
-    yield asyncio.get_event_loop()
+    # app.register_blueprint('/login')
+    return app
 
 
 @pytest.fixture
-def make_get_request(session):
-    async def inner(method: str, params: Optional[dict] = None) -> HTTPResponse:
-        params = params or {}
-        url = app_settings.URL_API_V1 + method
-        async with session.get(url, params=params) as response:
-            return HTTPResponse(
-                body=await response.json(),
-                headers=response.headers,
-                status=response.status,
-            )
+def flask_app():
+    app = create_app()
 
-    return inner
+    client = app.test_client()
+
+    ctx = app.test_request_context()
+    ctx.push()
+
+    yield client
+
+    ctx.pop()
+
+
+@pytest.fixture
+def app_with_db(flask_app):
+    db.create_all()
+
+    yield flask_app
+
+    db.session.commit()
+    db.drop_all()
+
 
 
