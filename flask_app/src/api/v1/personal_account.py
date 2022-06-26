@@ -46,11 +46,13 @@ def login():
     auth = request.authorization
 
     if not auth.username or not auth.password:
-        return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
+        return make_response('Could not verify', 401,
+                             {'WWW-Authenticate': 'Basic realm="Login required!"'})
 
     user = User.query.filter_by(login=auth.username).first()
     if not user:
-        return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
+        return make_response('Could not verify', 401,
+                             {'WWW-Authenticate': 'Basic realm="Login required!"'})
 
     if check_password_hash(user.password, auth.password):
         access_token = create_access_token(identity=user.id, fresh=True)
@@ -67,7 +69,8 @@ def login():
         return jsonify(access_token=access_token,
                        refresh_token=refresh_token)
 
-    return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
+    return make_response('Could not verify', 401,
+                         {'WWW-Authenticate': 'Basic realm="Login required!"'})
 
 
 # user’s refresh token must also be revoked when logging out;

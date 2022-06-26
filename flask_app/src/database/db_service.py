@@ -1,10 +1,10 @@
 import uuid
 from datetime import datetime
-from typing import Optional, List
-
-from werkzeug.security import generate_password_hash
+from typing import List
 
 from database.db import db
+from werkzeug.security import generate_password_hash
+
 from .dm_models import User, LoginHistory, Roles, UsersRoles
 
 

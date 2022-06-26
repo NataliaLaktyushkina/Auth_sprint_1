@@ -1,7 +1,7 @@
 from database.db_service import get_roles_by_user, assign_role_to_user, detach_role_from_user
+from database.dm_models import Roles, User
 from flask import jsonify, request, make_response
 from flask_jwt_extended import jwt_required
-from database.dm_models import Roles, User
 
 
 @jwt_required()
@@ -30,8 +30,8 @@ def assign_role():
 
 
 def detach_role():
-    username = request.args.get("username", None)
-    role = request.args.get("role", None)
+    username = request.args.get('username', None)
+    role = request.args.get('role', None)
     if not role or not username:
         return make_response('Role or username is empty', 401)
     db_role = Roles.query.filter_by(name=role).first()

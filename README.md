@@ -45,20 +45,25 @@
 
 ## Роли
 ### Postgres tables:
-1. Roles - id, name, peermission
+1. Roles - id, name
 2. UsersRoles 
 
 ### endpoints:
 ###/create_role  
 post  проверка прав- менеджер либо админ
-### /delente_role 
+### /delete_role 
 delete проверка прав-менеджер либо админ 
 ### /change_role 
 put проверка прав - менеджер либо админ
 ### /roles_list 
 get проверка прав - менеджер либо админ
 
-Проверка прав через токен, в который записываем permissions.
+Проверка прав через токен, в который записываем роли.
+
+## Роли пользователя:
+users_roles - список ролей пользователя
+assign_role - присвоение роли пользователя
+detach_role - отбираем роль у пользователя
 
 ##Storage:
 для блэк-листа и хранения refresh-токенов.

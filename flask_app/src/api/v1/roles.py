@@ -1,8 +1,8 @@
+from database.db_service import create_role_db, delete_role_db, change_role_db
 from database.dm_models import Roles
 from flask import jsonify, request, make_response
 from flask_jwt_extended import get_jwt
 from flask_jwt_extended import jwt_required
-from database.db_service import create_role_db, delete_role_db, change_role_db
 
 
 @jwt_required()
