@@ -5,6 +5,7 @@ from flask_jwt_extended import get_jwt
 from flask_jwt_extended import jwt_required
 from http import HTTPStatus
 
+
 @jwt_required()
 def create_role():
     token = get_jwt()
@@ -12,7 +13,7 @@ def create_role():
     if 'manager' not in users_roles:
         return make_response('Could not verify', HTTPStatus.UNAUTHORIZED,
                              {'WWW-Authenticate': 'Basic realm="Login required!"'})
-    role =request.args.get('new_role', None)
+    role = request.args.get('new_role', None)
     if not role:
         return make_response('New role is empty', HTTPStatus.UNAUTHORIZED)
 
@@ -33,7 +34,7 @@ def delete_role():
         return make_response('Role is empty', HTTPStatus.UNAUTHORIZED)
     db_role = Roles.query.filter_by(name=role).first()
     if not db_role:
-        return  make_response('Role does not exist', HTTPStatus.CONFLICT)
+        return make_response('Role does not exist', HTTPStatus.CONFLICT)
     delete_role_db(db_role)
     return jsonify(msg=f'Role {role} was successfully deleted')
 
@@ -43,7 +44,8 @@ def change_role():
     token = get_jwt()
     users_roles = token['roles']
     if 'manager' not in users_roles:
-        return make_response('Could not verify', HTTPStatus.UNAUTHORIZED, {'WWW-Authenticate': 'Basic realm="Login required!"'})
+        return make_response('Could not verify', HTTPStatus.UNAUTHORIZED,
+                             {'WWW-Authenticate': 'Basic realm="Login required!"'})
 
     role = request.args.get("role", None)
     new_role = request.args.get("new_name", None)
