@@ -1,4 +1,5 @@
 from datetime import timedelta
+from http import HTTPStatus
 
 from database.db_service import add_record_to_login_history, \
     create_user, change_login, change_password
@@ -22,7 +23,8 @@ def sign_up():
     username = request.values.get("username", None)
     password = request.values.get("password", None)
     if not username or not password:
-        return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
+        return make_response('Could not verify', HTTPStatus.UNAUTHORIZED,
+                             {'WWW-Authenticate': 'Basic realm="Login required!"'})
 
     new_user = create_user(username, password)
 
@@ -46,12 +48,12 @@ def login():
     auth = request.authorization
 
     if not auth.username or not auth.password:
-        return make_response('Could not verify', 401,
+        return make_response('Could not verify', HTTPStatus.UNAUTHORIZED,
                              {'WWW-Authenticate': 'Basic realm="Login required!"'})
 
     user = User.query.filter_by(login=auth.username).first()
     if not user:
-        return make_response('Could not verify', 401,
+        return make_response('Could not verify', HTTPStatus.UNAUTHORIZED,
                              {'WWW-Authenticate': 'Basic realm="Login required!"'})
 
     if check_password_hash(user.password, auth.password):
@@ -69,7 +71,7 @@ def login():
         return jsonify(access_token=access_token,
                        refresh_token=refresh_token)
 
-    return make_response('Could not verify', 401,
+    return make_response('Could not verify', HTTPStatus.UNAUTHORIZED,
                          {'WWW-Authenticate': 'Basic realm="Login required!"'})
 
 
@@ -113,7 +115,8 @@ def refresh():
         return jsonify(access_token=access_token,
                        refresh_token=refresh_token)
 
-    return make_response('Could not verify', 401, {'WWW-Authenticate': 'Basic realm="Login required!"'})
+    return make_response('Could not verify', HTTPStatus.UNAUTHORIZED,
+                         {'WWW-Authenticate': 'Basic realm="Login required!"'})
 
 
 @jwt_required()
@@ -140,7 +143,7 @@ def change_login():
     new_username = request.json.get('new_username')
     user = User.query.filter_by(login=new_username).first()
     if user:
-        return make_response('Login already existed', 400)
+        return make_response('Login already existed', HTTPStatus.BAD_REQUEST)
 
     identity = get_jwt_identity()  # user_id - current_user
     current_user = User.query.filter_by(id=identity).first()
