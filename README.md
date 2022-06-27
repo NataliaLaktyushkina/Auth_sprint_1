@@ -1,3 +1,6 @@
+Адрес репозитория:
+https://github.com/NataliaLaktyushkina/Auth_sprint_1
+
 ##API Личный Кабинет:
 
 ### **/signup**:
