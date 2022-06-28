@@ -32,6 +32,8 @@ services:
     container_name: auth_api
     build:
       context: flask_app
+    env_file:
+        - .env
     volumes:
       - static_data:/app/static
     image: flask_app
