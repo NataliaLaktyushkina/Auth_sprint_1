@@ -1,11 +1,13 @@
-from database.db_service import get_roles_by_user, assign_role_to_user, detach_role_from_user
-from database.dm_models import Roles, User
-from flask import jsonify, request, make_response
-from flask_jwt_extended import jwt_required
 from http import HTTPStatus
 
+from database.db_service import get_roles_by_user, assign_role_to_user, detach_role_from_user
+from database.dm_models import Roles, User
+from decorators import admin_required
+from flask import jsonify, request, make_response
+from flask_jwt_extended import jwt_required
 
-@jwt_required()
+
+@admin_required()
 def users_roles():
     username = request.args.get("username", None)
     if not username:
@@ -15,6 +17,7 @@ def users_roles():
     return jsonify(roles=output)
 
 
+@admin_required()
 def assign_role():
     username = request.args.get("username", None)
     role = request.args.get("role", None)
@@ -30,6 +33,7 @@ def assign_role():
     return jsonify(msg=f'Role {role} was assigned to user {username}')
 
 
+@admin_required()
 def detach_role():
     username = request.args.get('username', None)
     role = request.args.get('role', None)
