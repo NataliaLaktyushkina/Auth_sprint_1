@@ -1,6 +1,13 @@
 Адрес репозитория:
 https://github.com/NataliaLaktyushkina/Auth_sprint_1
 
+Запуск приложения:
+`docker-compose up --build`
+
+[Список переменных окружения](flask_app/src/utils/.env.example)
+
+[Документация по AuthAPI](http://127.0.0.1:80/apidocs )
+
 ##API Личный Кабинет:
 
 ### **/signup**:
