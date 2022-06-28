@@ -1,22 +1,25 @@
 from datetime import timedelta
 
+
 import click
 from flask import Flask
 from flask import request, send_from_directory
+
 from flask.cli import with_appcontext
 from flask_jwt_extended import JWTManager
+
 from flask_swagger_ui import get_swaggerui_blueprint
 
+from api.v1.personal_account import sign_up, login, logout, refresh, login_history, change_login, change_password
 from api.v1.roles import create_role, delete_role, change_role, roles_list
 from api.v1.users_roles import users_roles, assign_role, detach_role
 from database.db import db
 from database.db import init_db
+from database.db_service import get_users_roles, create_user, assign_role_to_user
 from database.dm_models import Roles
 from database.redis_db import redis_app
 from utils import logger
 from utils import settings
-from .api.v1.personal_account import sign_up, login, logout, refresh, login_history, change_login, change_password
-from .database.db_service import get_users_roles, create_user, assign_role_to_user
 
 ACCESS_EXPIRES = timedelta(hours=1)
 REFRESH_EXPIRES = timedelta(days=30)
@@ -92,9 +95,16 @@ def add_role_to_token(identity):
     callback function used to add additional claims when creating a JWT
     """
     roles = get_users_roles(identity)
-    output = [role.name for role in roles]
-    return {'roles': output}
-############################################
+    is_administrator = False
+    is_manager = False
+    for role in roles:
+        if role.name == 'admin':
+            is_administrator = True
+        if role.name == 'manager':
+            is_manager = True
+
+    return {'is_administrator': is_administrator,
+            'is_manager': is_manager}
 
 
 def main():
