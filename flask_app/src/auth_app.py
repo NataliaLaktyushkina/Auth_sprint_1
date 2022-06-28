@@ -15,8 +15,8 @@ from database.dm_models import Roles
 from database.redis_db import redis_app
 from utils import logger
 from utils import settings
-from .api.v1.personal_account import sign_up, login, logout, refresh, login_history, change_login, change_password
-from .database.db_service import get_users_roles, create_user, assign_role_to_user
+from api.v1.personal_account import sign_up, login, logout, refresh, login_history, change_login, change_password
+from database.db_service import get_users_roles, create_user, assign_role_to_user
 
 ACCESS_EXPIRES = timedelta(hours=1)
 REFRESH_EXPIRES = timedelta(days=30)
@@ -101,7 +101,7 @@ def main():
     init_db(app)
     app.app_context().push()
     db.create_all()
-    app.run()
+    # app.run()
 
 
 if __name__ == '__main__':
