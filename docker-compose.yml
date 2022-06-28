@@ -16,16 +16,31 @@ services:
     command:
       - redis-server
 
+  nginx:
+    container_name: nginx
+    build:
+      context: ./nginx
+    volumes:
+      - static_data:/static
+    ports:
+      - "80:80"
+    depends_on:
+      - auth_api
+
 
   auth_api:
     container_name: auth_api
     build:
       context: flask_app
+    volumes:
+      - static_data:/app/static
     image: flask_app
     depends_on:
       - redis
       - postgres
-    ports:
-      - 5001:5001
-    expose:
-      - "5001"
+
+volumes:
+  static_data:
+
+
+
