@@ -1,19 +1,22 @@
 from datetime import timedelta
 
+import click
 from flask import Flask
 from flask import request, send_from_directory
+from flask.cli import with_appcontext
 from flask_jwt_extended import JWTManager
 from flask_swagger_ui import get_swaggerui_blueprint
 
-from api.v1.personal_account import sign_up, login, logout, refresh, \
-    login_history, change_login, change_password
 from api.v1.roles import create_role, delete_role, change_role, roles_list
 from api.v1.users_roles import users_roles, assign_role, detach_role
 from database.db import db
 from database.db import init_db
-from database.db_service import get_users_roles
+from database.dm_models import Roles
 from database.redis_db import redis_app
+from utils import logger
 from utils import settings
+from .api.v1.personal_account import sign_up, login, logout, refresh, login_history, change_login, change_password
+from .database.db_service import get_users_roles, create_user, assign_role_to_user
 
 ACCESS_EXPIRES = timedelta(hours=1)
 REFRESH_EXPIRES = timedelta(days=30)
@@ -22,6 +25,23 @@ app = Flask(__name__)
 app.config["JWT_SECRET_KEY"] = settings.get_settings().SECRET_KEY
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = ACCESS_EXPIRES
 app.config["JWT_REFRESH_TOKEN_EXPIRES"] = REFRESH_EXPIRES
+
+
+@click.command(name='create-superuser')
+@click.argument('name', envvar='SUPERUSER_NAME')
+@click.argument('password', envvar='SUPERUSER_PASS')
+@with_appcontext
+def create_superuser(name, password):
+    superuser = create_user(username=name, password=password)
+    db_role = Roles.query.filter_by(name='admin').first()
+    if superuser and db_role:
+        assign_role_to_user(superuser, db_role)
+        logger.logger.info(msg='Superuser was created')
+    else:
+        logger.logger.error(msg='Error while creating superuser')
+
+
+app.cli.add_command(create_superuser)
 
 
 @app.route('/static/<path:path>')
@@ -81,7 +101,7 @@ def main():
     init_db(app)
     app.app_context().push()
     db.create_all()
-    # app.run()
+    app.run()
 
 
 if __name__ == '__main__':

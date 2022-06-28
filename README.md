@@ -4,7 +4,16 @@ https://github.com/NataliaLaktyushkina/Auth_sprint_1
 Запуск приложения:
 `docker-compose up --build`
 
-[Список переменных окружения](flask_app/src/utils/.env.example)
+Создание пользователя с админскими правами:
+Переменные окружения:
+- SUPERUSER_NAME
+- SUPERUSER_PASS
+
+Команды:
+- `export FLASK_APP=auth_app`
+- `flask create-superuser`
+
+[Список переменных окружения](flask_app/.env.example)
 
 [Документация по AuthAPI](http://127.0.0.1:80/apidocs )
 
