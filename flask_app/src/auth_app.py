@@ -1,18 +1,14 @@
 from datetime import timedelta
 
-
 import click
+
 from flask import Flask
 from flask import request, send_from_directory
-
 from flask.cli import with_appcontext
 from flask_jwt_extended import JWTManager
-
 from flask_swagger_ui import get_swaggerui_blueprint
 
-from api.v1.personal_account import sign_up, login, logout, refresh, login_history, change_login, change_password
-from api.v1.roles import create_role, delete_role, change_role, roles_list
-from api.v1.users_roles import users_roles, assign_role, detach_role
+from api.v1.api_v1_blueprint import app_v1_blueprint
 from database.db import db
 from database.db import init_db
 from database.db_service import get_users_roles, create_user, assign_role_to_user
@@ -57,24 +53,9 @@ API_URL = '/static/swagger_config.yml'
 swagger_blueprint = get_swaggerui_blueprint(SWAGGER_URL, API_URL)
 app.register_blueprint(swagger_blueprint)
 
+app.register_blueprint(app_v1_blueprint, url_prefix='/v1')
+
 jwt = JWTManager(app)
-
-app.add_url_rule('/change_login', methods=["POST"], view_func=change_login)
-app.add_url_rule('/change_password', methods=["POST"], view_func=change_password)
-app.add_url_rule('/login', methods=["POST"], view_func=login)
-app.add_url_rule('/login_history', methods=["GET"], view_func=login_history)
-app.add_url_rule('/logout', methods=["DELETE"], view_func=logout)
-app.add_url_rule('/refresh', methods=["GET"], view_func=refresh)
-app.add_url_rule('/sign_up', methods=["POST"], view_func=sign_up)
-
-app.add_url_rule('/create_role', methods=["POST"], view_func=create_role)
-app.add_url_rule('/delete_role', methods=["DELETE"], view_func=delete_role)
-app.add_url_rule('/change_role', methods=["PUT"], view_func=change_role)
-app.add_url_rule('/roles_list', methods=["GET"], view_func=roles_list)
-
-app.add_url_rule('/users_roles', methods=["GET"], view_func=users_roles)
-app.add_url_rule('/assign_role', methods=["POST"], view_func=assign_role)
-app.add_url_rule('/detach_role', methods=["DELETE"], view_func=detach_role)
 
 
 @jwt.token_in_blocklist_loader
@@ -111,7 +92,7 @@ def main():
     init_db(app)
     app.app_context().push()
     db.create_all()
-    app.run()
+    # app.run()
 
 
 if __name__ == '__main__':
