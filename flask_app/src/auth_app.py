@@ -2,7 +2,9 @@ from datetime import timedelta
 
 
 import click
+from http import HTTPStatus
 from flask import Flask
+from flask import Blueprint
 from flask import request, send_from_directory
 
 from flask.cli import with_appcontext
@@ -21,6 +23,8 @@ from database.redis_db import redis_app
 from utils import logger
 from utils import settings
 
+from werkzeug.middleware.dispatcher import DispatcherMiddleware
+
 ACCESS_EXPIRES = timedelta(hours=1)
 REFRESH_EXPIRES = timedelta(days=30)
 
@@ -28,6 +32,8 @@ app = Flask(__name__)
 app.config["JWT_SECRET_KEY"] = settings.get_settings().SECRET_KEY
 app.config["JWT_ACCESS_TOKEN_EXPIRES"] = ACCESS_EXPIRES
 app.config["JWT_REFRESH_TOKEN_EXPIRES"] = REFRESH_EXPIRES
+app.config['APPLICATION_ROOT'] = '/v1'
+
 
 
 @click.command(name='create-superuser')
@@ -57,16 +63,18 @@ API_URL = '/static/swagger_config.yml'
 swagger_blueprint = get_swaggerui_blueprint(SWAGGER_URL, API_URL)
 app.register_blueprint(swagger_blueprint)
 
+app_v1_blueprint = Blueprint("v1", __name__)
+
+
 jwt = JWTManager(app)
 
-app.add_url_rule('/change_login', methods=["POST"], view_func=change_login)
+app_v1_blueprint.add_url_rule(rule='/change_login', methods=["POST"], view_func=change_login)
 app.add_url_rule('/change_password', methods=["POST"], view_func=change_password)
-app.add_url_rule('/login', methods=["POST"], view_func=login)
+app_v1_blueprint.add_url_rule('/login', methods=["POST"], view_func=login)
 app.add_url_rule('/login_history', methods=["GET"], view_func=login_history)
 app.add_url_rule('/logout', methods=["DELETE"], view_func=logout)
 app.add_url_rule('/refresh', methods=["GET"], view_func=refresh)
 app.add_url_rule('/sign_up', methods=["POST"], view_func=sign_up)
-
 app.add_url_rule('/create_role', methods=["POST"], view_func=create_role)
 app.add_url_rule('/delete_role', methods=["DELETE"], view_func=delete_role)
 app.add_url_rule('/change_role', methods=["PUT"], view_func=change_role)
@@ -76,6 +84,14 @@ app.add_url_rule('/users_roles', methods=["GET"], view_func=users_roles)
 app.add_url_rule('/assign_role', methods=["POST"], view_func=assign_role)
 app.add_url_rule('/detach_role', methods=["DELETE"], view_func=detach_role)
 
+app.register_blueprint(app_v1_blueprint, url_prefix='/v1')
+
+for rule in app.url_map.iter_rules():
+    print(rule)
+print(app.url_map)
+# application = DispatcherMiddleware(app, {
+#     app.config['APPLICATION_ROOT']: app,
+# })
 
 @jwt.token_in_blocklist_loader
 def check_if_token_is_revoked(jwt_header, jwt_payload: dict):
