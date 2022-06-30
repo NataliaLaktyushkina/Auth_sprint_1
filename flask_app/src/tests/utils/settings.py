@@ -3,7 +3,10 @@ import os
 from dotenv import load_dotenv
 from pydantic import BaseSettings
 
-load_dotenv()
+IS_DOCKER = os.environ.get('AM_I_IN_A_DOCKER_CONTAINER', False)
+
+if not IS_DOCKER:
+    load_dotenv()
 
 
 class Settings(BaseSettings):
@@ -12,7 +15,7 @@ class Settings(BaseSettings):
     BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
     SECRET_KEY = os.getenv('SECRET_KEY')
-
+    SERVICE_URL: str = os.getenv("SERVICE_URL")
     # postgres
     USERNAME = os.getenv('POSTGRES_USER')
     PASSWORD = os.getenv('POSTGRES_PASSWORD')
