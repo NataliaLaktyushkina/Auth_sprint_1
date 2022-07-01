@@ -87,15 +87,15 @@ def create_app():
                 'is_manager': is_manager}
 
 
-def main():
+def app_with_db():
     app = create_app()
     init_db(app)
     app.app_context().push()
     db.create_all()
-    # app.run()
+    return app
 
 
 if __name__ == '__main__':
-    main()
+    app_with_db()
 
 # main()

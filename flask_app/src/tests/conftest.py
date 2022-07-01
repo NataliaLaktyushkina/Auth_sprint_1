@@ -9,37 +9,6 @@ from dataclasses import dataclass
 from utils import settings
 from typing import Optional
 
-#
-# app_settings = settings.get_settings()
-#
-# @dataclass
-# class HTTPResponse:
-#     body: dict
-#     headers: [str]
-#     status: int
-#
-# @pytest.fixture(scope='session')
-# def redis_client():
-#     client =  aioredis.create_redis_pool((app_settings.REDIS_HOST, app_settings.REDIS_PORT), minsize=10, maxsize=20)
-#     # Clean cache
-#     client.flushall()
-#     yield client
-#     await client.wait_closed()
-# #
-# @pytest.fixture
-# def make_get_request(session):
-#     async def inner(method: str, params: Optional[dict] = None) -> HTTPResponse:
-#         params = params or {}
-#         url = app_settings.URL_API_V1 + method
-#         async with session.get(url, params=params) as response:
-#             return HTTPResponse(
-#                 body=await response.json(),
-#                 headers=response.headers,
-#                 status=response.status,
-#             )
-#
-#     return inner
-
 from flask_sqlalchemy import SQLAlchemy
 
 from utils import settings
@@ -48,8 +17,10 @@ db_settings = settings.get_settings()
 
 username = db_settings.USERNAME
 password = db_settings.PASSWORD
-host = db_settings.HOST
-port = db_settings.PORT
+# host = db_settings.HOST
+# port = db_settings.PORT
+host = '127.0.0.1'
+port = '5433'
 host_port = ':'.join((host, port))
 database_name = db_settings.DATABASE_NAME
 
@@ -93,11 +64,12 @@ def runner(app):
 
 @pytest.fixture
 def app_with_db(app):
+    # db = SQLAlchemy(app)
     db.init_app(app)
     app.app_context().push()
     db.create_all()
 
     yield app
 
-    db.session.commit()
+    db.session.remove()
     db.drop_all()

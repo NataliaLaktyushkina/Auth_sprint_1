@@ -6,11 +6,11 @@ services:
     image: postgres:13
     restart: always
     ports:
-      - "5432:5432"
+      - "5433:5432"
     env_file:
       - flask_app/src/tests/utils/.env
     expose:
-      - "5432"
+      - "5433"
     volumes:
       - ./postgresql_test/data:/var/lib/postgresql/data
 

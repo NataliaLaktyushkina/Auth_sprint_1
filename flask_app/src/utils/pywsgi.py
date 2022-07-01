@@ -6,8 +6,8 @@ from gevent.pywsgi import WSGIServer
 import sys, os
 sys.path.append(os.path.dirname(__file__) + '/..')
 # from auth_app import app
-from auth_app import create_app
+from auth_app import app_with_db
 
-app = create_app()
+app = app_with_db()
 http_server = WSGIServer(('', 5001), app)
 http_server.serve_forever()
