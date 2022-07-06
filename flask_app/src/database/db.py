@@ -13,9 +13,10 @@ host_port = ':'.join((host, port))
 database_name = db_settings.DATABASE_NAME
 
 db = SQLAlchemy()
+SQLALCHEMY_DATABASE_URI =  f'postgresql://{username}:{password}@{host_port}/{database_name}'
 
 
 def init_db(app: Flask):
-    app.config['SQLALCHEMY_DATABASE_URI'] = f'postgresql://{username}:{password}@{host_port}/{database_name}'
+    app.config['SQLALCHEMY_DATABASE_URI'] = SQLALCHEMY_DATABASE_URI
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = True
     db.init_app(app)

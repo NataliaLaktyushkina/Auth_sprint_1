@@ -2,7 +2,8 @@ from datetime import timedelta
 from http import HTTPStatus
 
 from database.db_service import add_record_to_login_history, \
-    create_user, change_login, change_password
+    create_user, change_password_in_db
+from database.db_service import change_login_in_db
 from database.dm_models import User, LoginHistory
 from database.redis_db import redis_app
 from flask import jsonify, request, make_response
@@ -11,7 +12,7 @@ from flask_jwt_extended import create_refresh_token
 from flask_jwt_extended import get_jti, get_jwt
 from flask_jwt_extended import get_jwt_identity
 from flask_jwt_extended import jwt_required
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 
 ACCESS_EXPIRES = timedelta(hours=1)
 REFRESH_EXPIRES = timedelta(days=30)
@@ -56,7 +57,8 @@ def login():
         return make_response('Could not verify', HTTPStatus.UNAUTHORIZED,
                              {'WWW-Authenticate': 'Basic realm="Login required!"'})
 
-    if check_password_hash(user.password, auth.password):
+    hash = generate_password_hash(user.password)
+    if check_password_hash(hash, auth.password):
         access_token = create_access_token(identity=user.id, fresh=True)
         refresh_token = create_refresh_token(identity=user.id)
         user_agent = request.headers['user_agent']
@@ -140,14 +142,14 @@ def login_history():
 @jwt_required()
 def change_login():
 
-    new_username = request.json.get('new_username')
+    new_username = request.values.get('new_username')
     user = User.query.filter_by(login=new_username).first()
     if user:
         return make_response('Login already existed', HTTPStatus.BAD_REQUEST)
 
     identity = get_jwt_identity()  # user_id - current_user
     current_user = User.query.filter_by(id=identity).first()
-    change_login(current_user, new_username)
+    change_login_in_db(user=current_user, new_login=new_username)
 
     return jsonify(msg='Login successfully changed')
 
@@ -155,11 +157,11 @@ def change_login():
 @jwt_required()
 def change_password():
 
-    new_password = request.json.get('new_password')
+    new_password = request.values.get('new_password')
 
     identity = get_jwt_identity()  # user_id - current_user
     current_user = User.query.filter_by(id=identity).first()
-    change_password(current_user, new_password)
+    change_password_in_db(current_user, new_password)
 
     access_token = create_access_token(identity=identity, fresh=True)
     refresh_token = create_refresh_token(identity=identity)

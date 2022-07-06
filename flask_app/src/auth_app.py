@@ -91,11 +91,9 @@ def app_with_db():
     app = create_app()
     init_db(app)
     app.app_context().push()
-    db.create_all()
     return app
 
 
 if __name__ == '__main__':
     app_with_db()
 
-# main()

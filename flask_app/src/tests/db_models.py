@@ -2,8 +2,7 @@ import uuid
 import sys, os
 from sqlalchemy import ForeignKey
 from sqlalchemy.dialects.postgresql import UUID
-sys.path.append(os.path.dirname(__file__) + '/..')
-from ..conftest import db
+from conftest import db
 
 
 class User(db.Model):

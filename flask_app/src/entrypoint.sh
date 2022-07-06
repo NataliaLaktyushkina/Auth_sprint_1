@@ -9,5 +9,6 @@ while ! nc -z postgres 5432; do
 done
 
 echo "DB started"
+
 exec "$@"
 

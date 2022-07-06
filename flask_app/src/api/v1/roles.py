@@ -8,7 +8,7 @@ from flask import jsonify, request, make_response
 
 @admin_or_manager_required()
 def create_role():
-    role = request.args.get('new_role', None)
+    role = request.values.get('new_role', None)
     if not role:
         return make_response('New role is empty', HTTPStatus.UNAUTHORIZED)
 
@@ -18,7 +18,7 @@ def create_role():
 
 @admin_or_manager_required()
 def delete_role():
-    role = request.args.get("role", None)
+    role = request.values.get("role", None)
     if not role:
         return make_response('Role is empty', HTTPStatus.UNAUTHORIZED)
     db_role = Roles.query.filter_by(name=role).first()
@@ -30,8 +30,8 @@ def delete_role():
 
 @admin_or_manager_required()
 def change_role():
-    role = request.args.get("role", None)
-    new_role = request.args.get("new_name", None)
+    role = request.values.get("role", None)
+    new_role = request.values.get("new_name", None)
     if not role or not new_role:
         return make_response('Role or new name is empty', HTTPStatus.UNAUTHORIZED)
 

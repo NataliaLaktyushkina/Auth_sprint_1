@@ -45,6 +45,8 @@ services:
       sh -c "python3 -m pip install --upgrade pip
       && pip install --default-timeout=100 -r /app/tests/requirements.txt
       && python3 /app/tests/utils/wait_for_api.py
-      && pytest -rfe -v  /app/tests/tests_pers_acc.py"
+      && pytest -rfe -v  /app/tests/tests_pers_acc.py
+      && pytest -rfe -v  /app/tests/test_roles.py
+      && pytest -rfe -v  /app/tests/test_users_roles.py"
     depends_on:
       - auth_api
