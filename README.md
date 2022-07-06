@@ -20,7 +20,7 @@ https://github.com/NataliaLaktyushkina/Auth_sprint_1
 - `export FLASK_APP=auth_app`
 - `flask create-superuser`
 
-[Список переменных окружения](flask_app/.env.example)
+[Список переменных окружения](flask_app/src/utils/.env.example)
 
 [Документация по AuthAPI](http://127.0.0.1:80/apidocs )
 
