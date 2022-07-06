@@ -20,10 +20,9 @@ from utils import settings
 ACCESS_EXPIRES = timedelta(hours=1)
 REFRESH_EXPIRES = timedelta(days=30)
 
-app = Flask(__name__)
-app.config["JWT_SECRET_KEY"] = settings.get_settings().SECRET_KEY
-app.config["JWT_ACCESS_TOKEN_EXPIRES"] = ACCESS_EXPIRES
-app.config["JWT_REFRESH_TOKEN_EXPIRES"] = REFRESH_EXPIRES
+SWAGGER_URL = '/apidocs/'
+API_URL = '/static/swagger_config.yml'
+swagger_blueprint = get_swaggerui_blueprint(SWAGGER_URL, API_URL)
 
 
 @click.command(name='create-superuser')
@@ -40,62 +39,61 @@ def create_superuser(name, password):
         logger.logger.error(msg='Error while creating superuser')
 
 
-app.cli.add_command(create_superuser)
+def create_app():
+    app = Flask(__name__)
+    app.config["JWT_SECRET_KEY"] = settings.get_settings().SECRET_KEY
+    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = ACCESS_EXPIRES
+    app.config["JWT_REFRESH_TOKEN_EXPIRES"] = REFRESH_EXPIRES
+
+    app.cli.add_command(create_superuser)
+
+    app.register_blueprint(swagger_blueprint)
+    app.register_blueprint(app_v1_blueprint, url_prefix='/v1')
+
+    jwt = JWTManager(app)
+
+    @app.route('/static/<path:path>')
+    def send_static(path):
+        return send_from_directory('static', path)
+
+    return app
+
+    @jwt.token_in_blocklist_loader
+    def check_if_token_is_revoked(jwt_header, jwt_payload: dict):
+        """
+        Callback function to check if a JWT exists in the redis blocklist
+        """
+        user_agent = request.headers['user_agent']
+        jti = jwt_payload["jti"]
+        key = ':'.join((jti, user_agent))
+        token_in_redis = redis_app.get(key)
+        return token_in_redis is not None
+
+    @jwt.additional_claims_loader
+    def add_role_to_token(identity):
+        """
+        callback function used to add additional claims when creating a JWT
+        """
+        roles = get_users_roles(identity)
+        is_administrator = False
+        is_manager = False
+        for role in roles:
+            if role.name == 'admin':
+                is_administrator = True
+            if role.name == 'manager':
+                is_manager = True
+
+        return {'is_administrator': is_administrator,
+                'is_manager': is_manager}
 
 
-@app.route('/static/<path:path>')
-def send_static(path):
-    return send_from_directory('static', path)
-
-
-SWAGGER_URL = '/apidocs/'
-API_URL = '/static/swagger_config.yml'
-swagger_blueprint = get_swaggerui_blueprint(SWAGGER_URL, API_URL)
-app.register_blueprint(swagger_blueprint)
-
-app.register_blueprint(app_v1_blueprint, url_prefix='/v1')
-
-jwt = JWTManager(app)
-
-
-@jwt.token_in_blocklist_loader
-def check_if_token_is_revoked(jwt_header, jwt_payload: dict):
-    """
-    Callback function to check if a JWT exists in the redis blocklist
-    """
-    user_agent = request.headers['user_agent']
-    jti = jwt_payload["jti"]
-    key = ':'.join((jti, user_agent))
-    token_in_redis = redis_app.get(key)
-    return token_in_redis is not None
-
-
-@jwt.additional_claims_loader
-def add_role_to_token(identity):
-    """
-    callback function used to add additional claims when creating a JWT
-    """
-    roles = get_users_roles(identity)
-    is_administrator = False
-    is_manager = False
-    for role in roles:
-        if role.name == 'admin':
-            is_administrator = True
-        if role.name == 'manager':
-            is_manager = True
-
-    return {'is_administrator': is_administrator,
-            'is_manager': is_manager}
-
-
-def main():
+def app_with_db():
+    app = create_app()
     init_db(app)
     app.app_context().push()
-    db.create_all()
-    # app.run()
+    return app
 
 
 if __name__ == '__main__':
-    main()
+    app_with_db()
 
-main()

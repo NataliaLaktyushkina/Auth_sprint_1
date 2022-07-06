@@ -2,15 +2,15 @@ version: '3'
 
 services:
   postgres:
-    container_name: postgres_db_test
+    container_name: postgres
     image: postgres:13
     restart: always
     ports:
-      - "5432:5432"
+      - "5433:5432"
     env_file:
-      - .env
+      - flask_app/src/tests/utils/.env
     expose:
-      - "5432"
+      - "5433"
     volumes:
       - ./postgresql_test/data:/var/lib/postgresql/data
 
@@ -27,6 +27,10 @@ services:
     build:
       context: flask_app
     image: flask_app
+    env_file:
+        - flask_app/src/tests/utils/.env
+    ports:
+        - 5001:5001
     depends_on:
       - redis
       - postgres
@@ -35,11 +39,14 @@ services:
     container_name: tests
     image: flask_app
     network_mode: "host"
+    env_file:
+        - flask_app/src/tests/utils/.env
     entrypoint: >
       sh -c "python3 -m pip install --upgrade pip
-      && pip install --default-timeout=100 -r /tests/requirements.txt
-      && python3 /tests/utils/wait_for_redis.py
-      && python3 /tests/utils/wait_for_api.py
-      && pytest -rfe -v  /tests/src/tests_main.py"
+      && pip install --default-timeout=100 -r /app/tests/requirements.txt
+      && python3 /app/tests/utils/wait_for_api.py
+      && pytest -rfe -v  /app/tests/tests_pers_acc.py
+      && pytest -rfe -v  /app/tests/test_roles.py
+      && pytest -rfe -v  /app/tests/test_users_roles.py"
     depends_on:
       - auth_api

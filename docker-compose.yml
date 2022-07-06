@@ -6,7 +6,7 @@ services:
     image: postgres:13
     restart: always
     env_file:
-      - .env
+      - flask_app/src/utils/.env
     volumes:
       - ./postgresql/data:/var/lib/postgresql/data
 
@@ -33,7 +33,7 @@ services:
     build:
       context: flask_app
     env_file:
-        - .env
+        - flask_app/src/utils/.env
     volumes:
       - static_data:/app/static
     image: flask_app

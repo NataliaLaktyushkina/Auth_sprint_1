@@ -9,7 +9,7 @@ from flask_jwt_extended import jwt_required
 
 @admin_required()
 def users_roles():
-    username = request.args.get("username", None)
+    username = request.json.get("username", None)
     if not username:
         return make_response('Username is empty', HTTPStatus.UNAUTHORIZED)
     users_roles = get_roles_by_user(username)
@@ -19,8 +19,8 @@ def users_roles():
 
 @admin_required()
 def assign_role():
-    username = request.args.get("username", None)
-    role = request.args.get("role", None)
+    username = request.json.get("username", None)
+    role = request.json.get("role", None)
     if not role or not username:
         return make_response('Role or username is empty', HTTPStatus.UNAUTHORIZED)
     db_role = Roles.query.filter_by(name=role).first()
@@ -35,8 +35,8 @@ def assign_role():
 
 @admin_required()
 def detach_role():
-    username = request.args.get('username', None)
-    role = request.args.get('role', None)
+    username = request.json.get('username', None)
+    role = request.json.get('role', None)
     if not role or not username:
         return make_response('Role or username is empty', HTTPStatus.UNAUTHORIZED)
     db_role = Roles.query.filter_by(name=role).first()
