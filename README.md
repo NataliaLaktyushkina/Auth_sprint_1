@@ -5,7 +5,7 @@ https://github.com/NataliaLaktyushkina/Auth_sprint_1
 `docker-compose up --build`
 
 `alembic revision -m "initial"`
-`alembic upgrade head`
+`alembic revision --autogenerate`
 
 Запуск тестов:
 `docker-compose -f  'docker-compose testing.yml' up --build`

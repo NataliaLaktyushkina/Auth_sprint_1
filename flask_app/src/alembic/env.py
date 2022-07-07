@@ -8,6 +8,7 @@ import sys, os
 sys.path.append(os.path.dirname(__file__) + '/..')
 from database.db import SQLALCHEMY_DATABASE_URI
 from database.db import db
+from database.dm_models import Roles
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
